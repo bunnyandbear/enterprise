@@ -5,8 +5,11 @@ functions for use in other modules.
 """
 
 from __future__ import absolute_import, division, print_function, unicode_literals
-
 import numpy as np
+from numpy import pi, exp, sin, cos, arccos, log, real
+from numpy import loadtxt
+from scipy.integrate import dblquad
+from functools import lru_cache
 import scipy.linalg as sl
 import scipy.sparse as sps
 import scipy.special as ss
@@ -26,7 +29,7 @@ from enterprise.signals.gp_bases import (  # noqa: F401
     createfourierdesignmatrix_ephem,
     createfourierdesignmatrix_eph,
 )
-
+from functools import lru_cache
 
 try:
     from sksparse.cholmod import cholesky
@@ -735,15 +738,14 @@ def linear_interp_basis(toas, dt=30 * 86400):
 
 # overlap reduction functions
 
-
 @function
-def hd_orf(pos1, pos2):
+def hd_orf(pos1, pos2, dist1, dist2, f):
     """Hellings & Downs spatial correlation function."""
     if np.all(pos1 == pos2):
-        return 1
+        return f/f * 1
     else:
         omc2 = (1 - np.dot(pos1, pos2)) / 2
-        return 1.5 * omc2 * np.log(omc2) - 0.25 * omc2 + 0.5
+        return f/f * 1.5 * omc2 * np.log(omc2) - 0.25 * omc2 + 0.5
 
 
 @function
@@ -781,6 +783,112 @@ def anis_orf(pos1, pos2, params, **kwargs):
         clm[1:] = params
 
     return sum(clm[ii] * basis for ii, basis in enumerate(anis_basis[: (lmax + 1) ** 2, psr1_index, psr2_index]))
+
+# modified to use other polarization modes of GWs
+
+# pulsar term in front of the orf function
+def e_factor(xi, L1, L2, f, theta, phi):
+    phase1 = 2j*f*L1*pi*(1.0 + cos(theta))
+    phase2 = -2j*f*L2*pi*(1.0 + cos(theta)*cos(xi) + cos(phi)*sin(theta)*sin(xi))
+    temp1 = -1.0 + exp(phase1)
+    temp2 = -1.0 + exp(phase2)
+    return  real(temp1*temp2)
+
+# TT (+&×) mode
+@lru_cache(maxsize=None)
+@function
+def TT_orf(xi, dist1, dist2, f):
+    """
+    TT: Hellings & Downs spatial correlation function.
+    pos1: angular position of pulsar 1
+    pos2: angular position of pulsar 2
+    dist1: distance from pulsar 1 to Earth 
+    dist2: distance from pulsar 2 to Earth  
+    f: frequency
+    """
+    if xi == 0.0:
+        return f/f * 1
+    else:
+        omc2 = (1 - cos(xi)) / 2
+        return f/f * 3 * omc2 * np.log(omc2) - 0.5 * omc2 + 1
+    
+# ST (b) mode
+@lru_cache(maxsize=None)
+@function
+def ST_orf(xi, dist1, dist2, f):
+    """
+    ST: scalar breathing mode spatial correlation function.
+    pos1: angular position of pulsar 1
+    pos2: angular position of pulsar 2
+    dist1: distance from pulsar 1 to Earth 
+    dist2: distance from pulsar 2 to Earth  
+    f: frequency
+    """
+    return f/f * (0.75 + 0.25 * cos(xi))
+    
+@lru_cache(maxsize=None)
+def GammaInter(polar, xi, L1, L2):    
+    if L1 < L2:
+        L1, L2 = L2, L1
+    
+#     enterprise.__path__[0] + "/datafiles/pulsar_distances.json"
+    fileName = f"backup/{polar}_{xi}_{L1}_{L2}.txt"
+    data = loadtxt(fileName, comments="#")
+    x = data[:, 0]
+    y = data[:, 1]
+    return interp1d(x, y, kind='cubic') 
+
+def GammaVL0(xi, dist1, dist2, f):
+    """
+    xi: angular seperation of pulsar 1 and pulsar 2
+    dist1: distance from pulsar 1 to Earth 
+    dist2: distance from pulsar 2 to Earth  
+    f: frequency
+    """
+    return GammaInter("VL", xi, dist1, dist2)(f)[()]
+
+GammaVL = np.vectorize(GammaVL0) 
+
+
+# VL: vector longitude mode spatial correlation function.
+# @lru_cache(maxsize=None)
+@function
+def VL_orf(xi, dist1, dist2, f):
+    """
+    xi: angular seperation of pulsar 1 and pulsar 2
+    dist1: distance from pulsar 1 to Earth 
+    dist2: distance from pulsar 2 to Earth  
+    f: frequency
+    """
+#     GammaVL0 = GammaInter("VL", pos1, pos2, dist1, dist2)
+#     GammaVL = np.vectorize(GammaVL0) 
+    return GammaVL(xi, dist1, dist2, f)
+
+
+# SL: l mode spatial correlation function.
+def GammaSL0(xi, dist1, dist2, f):
+    """
+    xi: angular seperation of pulsar 1 and pulsar 2
+    dist1: distance from pulsar 1 to Earth 
+    dist2: distance from pulsar 2 to Earth  
+    f: frequency
+    """
+    return GammaInter("SL", xi, dist1, dist2)(f)[()]
+
+GammaSL = np.vectorize(GammaSL0) 
+
+
+# VL: vector longitude mode spatial correlation function.
+# @lru_cache(maxsize=None)
+@function
+def SL_orf(xi, dist1, dist2, f):
+    """
+    xi: angular seperation of pulsar 1 and pulsar 2
+    dist1: distance from pulsar 1 to Earth 
+    dist2: distance from pulsar 2 to Earth  
+    f: frequency
+    """
+    return GammaSL(xi, dist1, dist2, f)
 
 
 @function

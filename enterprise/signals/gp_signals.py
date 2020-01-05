@@ -301,6 +301,11 @@ def BasisCommonGP(priorFunction, basisFunction, orfFunction, coefficients=False,
                 self._params[par.name] = par
 
             self._psrpos = psr.pos
+            
+#             yr = 365.25 * 24.0 * 3600.0
+#             kpc_to_sec = 3.26156e3 * yr
+            # convert psr distance from kpc to second
+            self._psrdist = psr.pdist[0]
 
             if coefficients and pyv3:
                 self._construct_basis()
@@ -387,14 +392,16 @@ def BasisCommonGP(priorFunction, basisFunction, orfFunction, coefficients=False,
                 self._construct_basis(params)
 
                 prior = BasisCommonGP._prior(self._labels, params=params)
-                orf = BasisCommonGP._orf(self._psrpos, self._psrpos, params=params)
+                xi = 0.0
+                orf = BasisCommonGP._orf(xi, self._psrdist, self._psrdist, self._labels, params=params)
 
                 return prior * orf
 
             @classmethod
             def get_phicross(cls, signal1, signal2, params):
                 prior = BasisCommonGP._prior(signal1._labels, params=params)
-                orf = BasisCommonGP._orf(signal1._psrpos, signal2._psrpos, params=params)
+                xi = np.arccos(np.dot(signal1._psrpos, signal2._psrpos))
+                orf = BasisCommonGP._orf(xi, signal1._psrdist, signal2._psrdist, signal1._labels, params=params)
 
                 return prior * orf
 
