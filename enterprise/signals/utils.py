@@ -807,7 +807,7 @@ def TT_orf(xi, dist1, dist2, f):
     f: frequency
     """
     if xi == 0.0:
-        return f/f * 1
+        return f/f * 2
     else:
         omc2 = (1 - cos(xi)) / 2
         return f/f * 3 * omc2 * np.log(omc2) - 0.5 * omc2 + 1
@@ -824,7 +824,10 @@ def ST_orf(xi, dist1, dist2, f):
     dist2: distance from pulsar 2 to Earth  
     f: frequency
     """
-    return f/f * (0.75 + 0.25 * cos(xi))
+    if xi == 0.0:
+        return f/f * 2
+    else:
+        return f/f * (0.75 + 0.25 * cos(xi))
     
 @lru_cache(maxsize=None)
 def GammaInter(polar, xi, L1, L2):    
