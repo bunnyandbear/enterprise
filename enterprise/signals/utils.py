@@ -832,7 +832,7 @@ def GammaInter(polar, xi, L1, L2):
         L1, L2 = L2, L1
     
 #     enterprise.__path__[0] + "/datafiles/pulsar_distances.json"
-    fileName = f"backup/{polar}_{xi}_{L1}_{L2}.txt"
+    fileName = enterprise.__path__[0] + f"backup/{polar}_{xi}_{L1}_{L2}.txt"
     data = loadtxt(fileName, comments="#")
     x = data[:, 0]
     y = data[:, 1]
