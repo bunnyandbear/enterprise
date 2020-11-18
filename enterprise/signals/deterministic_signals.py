@@ -4,8 +4,6 @@ Deterministic signals are defined as the class of signals that have a
 delay that is to be subtracted from the residuals.
 """
 
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import numpy as np
 
 from enterprise import pulsar
@@ -28,7 +26,7 @@ def Deterministic(waveform, selection=Selection(selections.no_selection), name="
 
         def _do_selection(self, psr, waveform, selection):
             sel = selection(psr)
-            self._keys = list(sorted(sel.masks.keys()))
+            self._keys = sorted(sel.masks.keys())
             self._masks = [sel.masks[key] for key in self._keys]
             self._delay = np.zeros(len(psr.toas))
             self._wf, self._params = {}, {}
@@ -63,7 +61,7 @@ def PhysicalEphemerisSignal(
     d_neptune_mass=True,
     jup_orb_elements=True,
     sat_orb_elements=False,
-    model="orbel",
+    model="setIII",
     use_epoch_toas=True,
     name="",
 ):  # noqa: E125,E501
@@ -116,7 +114,7 @@ def PhysicalEphemerisSignal(
     :param model:
         Sets the vector basis used by Jupiter and Saturn orbital-element
         perturbations. Currently can be set to 'orbel', 'orbel-v2', 'setIII'.
-        Default: 'orbel'
+        Default: 'setIII'
 
     :param use_epoch_toas:
         Use interpolation from epoch to full TOAs. This option reduces

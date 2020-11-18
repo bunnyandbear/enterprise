@@ -1,8 +1,6 @@
 # pulsar.py
-
-# Class containing pulsar data from timing package [tempo2/PINT].
-
-from __future__ import absolute_import, division, print_function, unicode_literals
+"""Class containing pulsar data from timing package [tempo2/PINT].
+"""
 
 import json
 import logging
@@ -59,8 +57,8 @@ def get_maxobs(timfile):
     with open(timfile) as tfile:
         flines = tfile.readlines()
         lines = [ln for ln in flines if not ln.startswith("C")]
-        if any(map(lambda x: "INCLUDE" in x, lines)):
-            for line in filter(lambda x: "INCLUDE" in x, lines):
+        if any(["INCLUDE" in ln for ln in lines]):
+            for line in [ln for ln in lines if "INCLUDE" in ln]:
                 maxobs += get_maxobs(line.split()[-1])
         else:
             maxobs = sum(1 for line in lines if line.rstrip("\n"))
@@ -78,8 +76,8 @@ class BasePulsar(object):
         if self.name[0] not in ["J", "B"]:
             if "J" + self.name in pdict:
                 pdist = tuple(pdict.get("J" + self.name))
-            elif "B" + self.name in pdict:
-                pdist = tuple(pdict.get("B" + self.name))
+            else:
+                pdist = tuple(pdict.get("B" + self.name, (1.0, 0.2)))
         else:
             pdist = tuple(pdict.get(self.name, (1.0, 0.2)))
 
@@ -244,12 +242,11 @@ class BasePulsar(object):
 
         nobs = len(self._toas)
         bflags = ["flag"] * nobs
-        check = lambda i, fl: fl in self._flags and self._flags[fl][i] != ""
         flags = [["group"], ["g"], ["sys"], ["i"], ["f"], ["fe", "be"]]
         for ii in range(nobs):
             # TODO: make this cleaner
             for f in flags:
-                if np.all(list(map(lambda xx: check(ii, xx), f))):
+                if np.all([x in self._flags and self._flags[x][ii] != "" for x in f]):
                     bflags[ii] = "_".join(self._flags[x][ii] for x in f)
                     break
         return np.array(bflags)[self._isort]
@@ -278,6 +275,11 @@ class BasePulsar(object):
     def planetssb(self):
         """Return planetary position vectors at all timestamps"""
         return self._planetssb[self._isort, :, :]
+
+    @property
+    def sunssb(self):
+        """Return sun position vector at all timestamps"""
+        return self._sunssb[self._isort, :]
 
 
 class PintPulsar(BasePulsar):
@@ -339,6 +341,9 @@ class PintPulsar(BasePulsar):
     def _get_planetssb(self):
         return np.zeros((len(self._toas), 9, 6))
 
+    def _get_sunssb(self):
+        return np.zeros((len(self._toas), 6))
+
 
 class Tempo2Pulsar(BasePulsar):
     def __init__(self, t2pulsar, sort=True, drop_t2pulsar=True, planets=True):
@@ -357,10 +362,10 @@ class Tempo2Pulsar(BasePulsar):
         self._ssbfreqs = np.double(t2pulsar.ssbfreqs()) / 1e6
 
         # fitted parameters
-        self.fitpars = ["Offset"] + list(map(str, t2pulsar.pars()))
+        self.fitpars = ["Offset"] + [str(p) for p in t2pulsar.pars()]
 
         # set parameters
-        spars = list(map(str, t2pulsar.pars(which="set")))
+        spars = [str(p) for p in t2pulsar.pars(which="set")]
         self.setpars = [sp for sp in spars if sp not in self.fitpars]
 
         self._flags = {}
@@ -371,6 +376,7 @@ class Tempo2Pulsar(BasePulsar):
         self._raj, self._decj = self._get_radec(t2pulsar)
         self._pos = self._get_pos()
         self._planetssb = self._get_planetssb(t2pulsar)
+        self._sunssb = self._get_sunssb(t2pulsar)
 
         # gather DM/DMX information if available
         self._set_dm(t2pulsar)
@@ -440,6 +446,21 @@ class Tempo2Pulsar(BasePulsar):
                     planetssb[:, ii, 3:] = utils.ecl2eq_vec(planetssb[:, ii, 3:])
         return planetssb
 
+    def _get_sunssb(self, t2pulsar):
+        sunssb = None
+        if self.planets:
+            # for ii in range(1, 10):
+            #     tag = 'DMASSPLANET' + str(ii)
+            #     self.t2pulsar[tag].val = 0.0
+            self.t2pulsar.formbats()
+            sunssb = np.zeros((len(self._toas), 6))
+            sunssb[:, :] = self.t2pulsar.sun_ssb
+
+            if "ELONG" and "ELAT" in np.concatenate((t2pulsar.pars(), t2pulsar.pars(which="set"))):
+                sunssb[:, :3] = utils.ecl2eq_vec(sunssb[:, :3])
+                sunssb[:, 3:] = utils.ecl2eq_vec(sunssb[:, 3:])
+        return sunssb
+
 
 def Pulsar(*args, **kwargs):
 
@@ -451,14 +472,14 @@ def Pulsar(*args, **kwargs):
     timing_package = kwargs.get("timing_package", "tempo2")
 
     if pint is not None:
-        toas = list(filter(lambda x: isinstance(x, toa.TOAs), args))
-        model = list(filter(lambda x: isinstance(x, TimingModel), args))
+        toas = [x for x in args if isinstance(x, toa.TOAs)]
+        model = [x for x in args if isinstance(x, TimingModel)]
 
     if t2 is not None:
-        t2pulsar = list(filter(lambda x: isinstance(x, t2.tempopulsar), args))
+        t2pulsar = [x for x in args if isinstance(x, t2.tempopulsar)]
 
-    parfile = list(filter(lambda x: isinstance(x, str) and x.split(".")[-1] == "par", args))
-    timfile = list(filter(lambda x: isinstance(x, str) and x.split(".")[-1] in ["tim", "toa"], args))
+    parfile = [x for x in args if isinstance(x, str) and x.split(".")[-1] == "par"]
+    timfile = [x for x in args if isinstance(x, str) and x.split(".")[-1] in ["tim", "toa"]]
 
     if pint and toas and model:
         return PintPulsar(toas[0], model[0], sort=sort, planets=planets)

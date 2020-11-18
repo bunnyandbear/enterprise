@@ -3,8 +3,6 @@
 functions for use in other modules.
 """
 
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import numpy as np
 import scipy.stats
 
@@ -150,3 +148,8 @@ def powerlaw_genmodes(f, log10_A=-16, gamma=5, components=2, wgts=None):
     return (
         (10 ** log10_A) ** 2 / 12.0 / np.pi ** 2 * const.fyr ** (gamma - 3) * f ** (-gamma) * np.repeat(df, components)
     )
+
+
+@function
+def infinitepower(f):
+    return np.full_like(f, 1e40, dtype="d")

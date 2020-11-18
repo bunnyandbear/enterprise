@@ -6,6 +6,11 @@ derived from these base classes.
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import collections
+
+try:
+    from collections.abc import Sequence
+except:
+    from collections import Sequence
 import itertools
 import logging
 
@@ -137,6 +142,10 @@ class Signal(object):
         """Returns inverse of the covaraince of basis amplitudes."""
         return None
 
+    def get_logsignalprior(self, params):
+        """Returns an additional prior/likelihood terms associated with a signal."""
+        return 0
+
 
 class CommonSignal(Signal):
     """Base class for CommonSignal objects."""
@@ -171,7 +180,11 @@ class LogLikelihood(object):
         phiinvs = self.pta.get_phiinv(params, logdet=True, method=phiinv_method)
 
         # get -0.5 * (rNr + logdet_N) piece of likelihood
-        loglike += -0.5 * np.sum([l for l in self.pta.get_rNr_logdet(params)])
+        # the np.sum here is needed because each pulsar returns a 2-tuple
+        loglike += -0.5 * np.sum([ell for ell in self.pta.get_rNr_logdet(params)])
+
+        # get extra prior/likelihoods
+        loglike += sum(self.pta.get_logsignalprior(params))
 
         # red noise piece
         if self.pta._commonsignals:
@@ -212,7 +225,7 @@ class LogLikelihood(object):
 
 class PTA(object):
     def __init__(self, init, lnlikelihood=LogLikelihood):
-        if isinstance(init, collections.Sequence):
+        if isinstance(init, Sequence):
             self._signalcollections = list(init)
         else:
             self._signalcollections = [init]
@@ -275,6 +288,9 @@ class PTA(object):
 
     def get_delay(self, params={}):
         return [signalcollection.get_delay(params) for signalcollection in self._signalcollections]
+
+    def get_logsignalprior(self, params):
+        return [signalcollection.get_logsignalprior(params) for signalcollection in self._signalcollections]
 
     def set_default_params(self, params):
         for sc in self._signalcollections:
@@ -598,7 +614,7 @@ class PTA(object):
         # map parameter vector if needed
         params = params if isinstance(params, dict) else self.map_params(params)
 
-        return np.sum(p.get_logpdf(params=params) for p in self.params)
+        return np.sum([p.get_logpdf(params=params) for p in self.params])
 
     @property
     def pulsars(self):
@@ -769,7 +785,7 @@ def SignalCollection(metasignals):
                             cc += 1
                 elif Fmat is not None and signal.basis_params:
                     nf = Fmat.shape[1]
-                    idx[signal] = list(np.arange(cc, cc + nf))
+                    idx[signal] = list(range(cc, cc + nf))
                     cc += nf
 
             if not idx:
@@ -846,6 +862,10 @@ def SignalCollection(metasignals):
             Nvec = self.get_ndiag(params)
             res = self.get_detres(params)
             return Nvec.solve(res, left_array=res, logdet=True)
+
+        # TO DO: cache how?
+        def get_logsignalprior(self, params):
+            return sum(signal.get_logsignalprior(params) for signal in self._signals)
 
     return SignalCollection
 

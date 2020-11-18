@@ -28,14 +28,14 @@ def WhiteNoise(varianceFunction, selection=Selection(selections.no_selection), n
 
         def _do_selection(self, psr, vfn, selection):
             sel = selection(psr)
-            self._keys = list(sorted(sel.masks.keys()))
+            self._keys = sorted(sel.masks.keys())
             self._masks = [sel.masks[key] for key in self._keys]
             self._ndiag, self._params = {}, {}
             for key, mask in zip(self._keys, self._masks):
                 pnames = [psr.name, name, key]
                 pname = "_".join([n for n in pnames if n])
                 self._ndiag[key] = vfn(pname, psr=psr)
-                for param in list(self._ndiag[key]._params.values()):
+                for param in self._ndiag[key]._params.values():
                     self._params[param.name] = param
 
         @property
@@ -159,14 +159,14 @@ def EcorrKernelNoise(
 
             sel = selection(psr)
             self._params, self._masks = sel("log10_ecorr", log10_ecorr)
-            keys = list(sorted(self._masks.keys()))
+            keys = sorted(self._masks.keys())
             masks = [self._masks[key] for key in keys]
 
             Umats = []
             for key, mask in zip(keys, masks):
                 Umats.append(utils.create_quantization_matrix(psr.toas[mask], nmin=2)[0])
 
-            nepoch = np.sum(U.shape[1] for U in Umats)
+            nepoch = sum(U.shape[1] for U in Umats)
             U = np.zeros((len(psr.toas), nepoch))
             self._slices = {}
             netot = 0
