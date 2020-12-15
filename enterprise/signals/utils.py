@@ -731,14 +731,23 @@ def linear_interp_basis(toas, dt=30 * 86400):
 
 # overlap reduction functions
 
+# @function
+# def hd_orf(pos1, pos2, dist1, dist2, f):
+#     """Hellings & Downs spatial correlation function."""
+#     if np.all(pos1 == pos2):
+#         return f/f * 1
+#     else:
+#         omc2 = (1 - np.dot(pos1, pos2)) / 2
+#         return f/f * 1.5 * omc2 * np.log(omc2) - 0.25 * omc2 + 0.5
+    
 @function
-def hd_orf(pos1, pos2, dist1, dist2, f):
+def hd_orf(pos1, pos2):
     """Hellings & Downs spatial correlation function."""
     if np.all(pos1 == pos2):
-        return f/f * 1
+        return 1
     else:
         omc2 = (1 - np.dot(pos1, pos2)) / 2
-        return f/f * 1.5 * omc2 * np.log(omc2) - 0.25 * omc2 + 0.5
+        return 1.5 * omc2 * np.log(omc2) - 0.25 * omc2 + 0.5
 
 
 @function
