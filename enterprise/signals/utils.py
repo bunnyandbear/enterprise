@@ -767,7 +767,13 @@ def monopole_orf(pos1, pos2):
     else:
         return 1.0
 
-
+@function
+def st_orf(pos1, pos2):
+    if np.all(pos1 == pos2):
+        return 1
+    else:
+        return 0.5 * (0.75 + 0.25 * np.dot(pos1, pos2))
+    
 @function
 def anis_orf(pos1, pos2, params, **kwargs):
     """Anisotropic GWB spatial correlation function."""
