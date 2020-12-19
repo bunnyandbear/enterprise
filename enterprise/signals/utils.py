@@ -310,7 +310,7 @@ def get_gammadot(F, mc, q, e):
     :param e: Eccentricity of binary
 
     :returns: dgamma/dt
-    """了
+    """
 
     # chirp mass
     mc *= const.Tsun
