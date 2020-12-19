@@ -394,6 +394,7 @@ def BasisCommonGP(priorFunction, basisFunction, orfFunction, coefficients=False,
             def get_phicross(cls, signal1, signal2, params):
                 prior = BasisCommonGP._prior(signal1._labels, params=params)
                 xi = np.arccos(np.dot(signal1._psrpos, signal2._psrpos))
+                xi = round(xi, 10)
                 orf = BasisCommonGP._orf(xi, signal1._psrdist, signal2._psrdist, signal1._labels, params=params)
 
                 return prior * orf
