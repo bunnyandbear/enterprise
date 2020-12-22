@@ -815,10 +815,10 @@ def TT_orf(xi, dist1, dist2, f):
     f: frequency
     """
     if xi == 0.0:
-        return f/f * 2
+        return f/f * 1.0
     else:
         omc2 = (1 - cos(xi)) / 2
-        return f/f * 3 * omc2 * np.log(omc2) - 0.5 * omc2 + 1
+        return f/f * 1.5 * omc2 * np.log(omc2) - 0.25 * omc2 + 0.5
     
 # ST (b) mode
 @lru_cache(maxsize=None)
@@ -833,9 +833,9 @@ def ST_orf(xi, dist1, dist2, f):
     f: frequency
     """
     if xi == 0.0:
-        return f/f * 2
+        return f/f * 1.0
     else:
-        return f/f * (0.75 + 0.25 * cos(xi))
+        return f/f * 0.5 * (0.75 + 0.25 * cos(xi))
     
 @lru_cache(maxsize=None)
 def GammaInter(polar, xi, L1, L2):    
@@ -873,7 +873,7 @@ def VL_orf(xi, dist1, dist2, f):
     """
 #     GammaVL0 = GammaInter("VL", pos1, pos2, dist1, dist2)
 #     GammaVL = np.vectorize(GammaVL0) 
-    return GammaVL(xi, dist1, dist2, f)
+    return 0.5 * GammaVL(xi, dist1, dist2, f)
 
 
 # SL: l mode spatial correlation function.
@@ -899,7 +899,7 @@ def SL_orf(xi, dist1, dist2, f):
     dist2: distance from pulsar 2 to Earth  
     f: frequency
     """
-    return GammaSL(xi, dist1, dist2, f)
+    return 0.5 * GammaSL(xi, dist1, dist2, f)
 
 
 @function
