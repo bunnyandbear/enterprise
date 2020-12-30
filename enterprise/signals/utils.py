@@ -837,6 +837,18 @@ def ST_orf(xi, dist1, dist2, f):
     else:
         return f/f * 0.5 * (0.75 + 0.25 * cos(xi))
     
+# ST (b) mode
+@lru_cache(maxsize=None)
+@function
+def ST_cross_orf(xi, dist1, dist2, f):
+    """
+    ST: scalar breathing mode spatial correlation function with only cross-correlations.
+    """
+    if xi == 0.0:
+        return f/f * 0.0
+    else:
+        return f/f * 0.5 * (0.75 + 0.25 * cos(xi))
+    
 @lru_cache(maxsize=None)
 def GammaInter(polar, xi, L1, L2):    
     if L1 < L2:
