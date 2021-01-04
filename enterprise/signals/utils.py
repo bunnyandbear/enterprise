@@ -750,27 +750,43 @@ def hd_orf(xi, dist1, dist2, f):
 #         return 1.5 * omc2 * np.log(omc2) - 0.25 * omc2 + 0.5
 
 
+# @function
+# def dipole_orf(pos1, pos2):
+#     """Dipole spatial correlation function."""
+#     if np.all(pos1 == pos2):
+#         return 1 + 1e-5
+#     else:
+#         return np.dot(pos1, pos2)
+    
 @function
-def dipole_orf(pos1, pos2):
+def dipole_orf(xi, dist1, dist2, f):
     """Dipole spatial correlation function."""
-    if np.all(pos1 == pos2):
-        return 1 + 1e-5
+    if xi==0:
+        return f/f * (1.0 + 1e-5)
     else:
-        return np.dot(pos1, pos2)
+        return f/f * cos(xi)
 
+
+# @function
+# def monopole_orf(pos1, pos2):
+#     """Monopole spatial correlation function."""
+#     if np.all(pos1 == pos2):
+#         return 1.0 + 1e-5
+#     else:
+#         return 1.0
 
 @function
 def monopole_orf(pos1, pos2):
     """Monopole spatial correlation function."""
-    if np.all(pos1 == pos2):
-        return 1.0 + 1e-5
+    if xi==0:
+        return f/f * (1.0 + 1e-5)
     else:
-        return 1.0
+        return f/f * 1.0
 
 @function
 def st_orf(pos1, pos2):
     if np.all(pos1 == pos2):
-        return 1
+        return 1.0
     else:
         return 0.5 * (0.75 + 0.25 * np.dot(pos1, pos2))
     
