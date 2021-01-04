@@ -776,7 +776,7 @@ def dipole_orf(xi, dist1, dist2, f):
 #         return 1.0
 
 @function
-def monopole_orf(pos1, pos2):
+def monopole_orf(xi, dist1, dist2, f):
     """Monopole spatial correlation function."""
     if xi==0:
         return f/f * (1.0 + 1e-5)
