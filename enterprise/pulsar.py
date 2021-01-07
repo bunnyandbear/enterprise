@@ -386,6 +386,8 @@ class Tempo2Pulsar(BasePulsar):
             self._pos_t = utils.ecl2eq_vec(self._pos_t)
 
         self.sort_data()
+        
+        self.noisemodel = self._get_noisemodel(t2pulsar)
 
         if drop_t2pulsar:
             del self.t2pulsar
@@ -460,6 +462,15 @@ class Tempo2Pulsar(BasePulsar):
                 sunssb[:, :3] = utils.ecl2eq_vec(sunssb[:, :3])
                 sunssb[:, 3:] = utils.ecl2eq_vec(sunssb[:, 3:])
         return sunssb
+    
+    def _get_noisemodel(self, t2pulsar):
+        noise_dict = {}
+        noisemodel = t2pulsar.noisemodel
+        for key in noisemodel.keys():
+            if (type(noisemodel[key]) not in [float, int]):
+                noise_dict[key] = noisemodel[key].val 
+                
+        return noise_dict
 
 
 def Pulsar(*args, **kwargs):
